@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
+import authRoutes from "./routes/auth.js";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -16,6 +17,9 @@ app.use(express.json());
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
+
+// Register, login and "who am I"
+app.use("/api/auth", authRoutes);
 
 // Connect to MongoDB first, then start the server
 async function start() {
