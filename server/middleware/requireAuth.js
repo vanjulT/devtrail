@@ -14,6 +14,6 @@ export default function requireAuth(req, res, next) {
     req.userId = payload.userId; // every later route uses this to keep data per user
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Your session has expired. Please log in again." });
+    return res.status(401).json({ message: "Your session is invalid or has expired. Please log in again." });
   }
 }
