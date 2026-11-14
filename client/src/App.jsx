@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
-import DashboardPage from "./pages/DashboardPage.jsx";
+import LibraryPage from "./pages/LibraryPage.jsx";
 
 function App() {
   return (
@@ -13,7 +13,7 @@ function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <LibraryPage />
           </ProtectedRoute>
         }
       />
