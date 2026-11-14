@@ -4,8 +4,13 @@ const API_URL = import.meta.env.VITE_API_URL;
 // It adds the login token and turns server errors into readable messages.
 export async function apiFetch(path, options = {}) {
   const token = localStorage.getItem("devtrail-token");
+  const isFile = options.body instanceof FormData;
 
-  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  const headers = { ...(options.headers || {}) };
+  // For files the browser sets the type itself (with the file boundary), so we don't
+  if (!isFile) {
+    headers["Content-Type"] = "application/json";
+  }
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
