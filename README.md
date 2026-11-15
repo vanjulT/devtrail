@@ -8,6 +8,17 @@ Milestone 5 · Flavour B (Developer learning companion) · WSCube Full Stack Men
 
 > The API runs on Render's free plan and sleeps after 15 minutes. The first request after that can take about 50 seconds.
 
+**Demo video (2–3 min):** _link coming soon_
+
+### Test accounts
+
+Two accounts, so you can check that each user only sees their own data.
+
+| User | Email | Password |
+| --- | --- | --- |
+| A | `vanjul@tests.com` | `test12345` |
+| B | _to be added_ | _to be added_ |
+
 ![DevTrail home page](docs/screenshots/01-home.jpg)
 
 ---
@@ -155,7 +166,7 @@ All routes except register, login and health need `Authorization: Bearer <token>
 
 ## Cost
 
-DevTrail runs for **€0 per month**: every service is on a free plan.
+**Running cost today: €0 per month.** Every service runs on a free plan:
 
 | Service | Used for | Plan | Limit that matters |
 | --- | --- | --- | --- |
@@ -166,7 +177,40 @@ DevTrail runs for **€0 per month**: every service is on a free plan.
 | Groq | Chat, quizzes, coach, Whisper | Free | 8,000 tokens per minute on gpt-oss-120b |
 | Google Gemini | Embeddings, voice | Free tier | Daily request limits (the browser voice takes over) |
 
-To stay inside Groq's per-minute limit, the coach uses low reasoning, a cap on reply length and short tool results. Moving a task takes about 1.6 seconds.
+### Models and why
+
+| Job | Model | Why this one |
+| --- | --- | --- |
+| Chat answers, quizzes, flashcards, study coach | `openai/gpt-oss-120b` on Groq | Follows rules and calls tools reliably, streams very fast, and is cheap ($0.15 in / $0.60 out per 1M tokens). A bigger model isn't needed: answers come from retrieved text, so the hard parts are retrieval and checking, not deep reasoning. |
+| Speech to text | `whisper-large-v3-turbo` on Groq | Fast and accurate in English, $0.04 per hour of audio |
+| Embeddings | `gemini-embedding-001` at 768 dimensions | Good retrieval quality, $0.15 per 1M tokens; 768 dimensions keep Pinecone small and fast |
+| Voice answers | `gemini-2.5-flash-preview-tts` | A natural voice that works in every browser; the browser's own voice is the free fallback |
+
+### Approximate cost per user session (at paid prices)
+
+A typical 30-minute session: upload 1 PDF (10 pages), ask 10 questions, make 1 quiz and 1 deck, ask 3 voice questions, and send 2 requests to the coach.
+
+| Step | Approx. usage | Cost (USD) |
+| --- | --- | --- |
+| Upload: embed ~20 chunks | ~5,000 tokens | $0.0008 |
+| 10 chat answers | ~20,000 in + 3,000 out | $0.0048 |
+| Quiz + flashcards (with 1 retry) | ~7,500 in + 4,500 out | $0.0038 |
+| 2 coach requests (~4 steps each) | ~20,000 in + 2,400 out | $0.0044 |
+| 3 voice questions (Whisper) | ~30 s of audio | $0.0003 |
+| 3 voice answers (Gemini TTS) | ~60 s of speech, ~1,500 audio tokens | $0.0150 |
+| **Total** | | **≈ $0.03 per session** |
+
+So one active user doing about 12 sessions a month would cost about **$0.35 per month**. Half of it is the voice; text answers are very cheap. (Token counts are estimates from the prompt sizes in the code; audio estimated at ~25 tokens per second of speech. Prices checked 15 Nov 2026: [Groq](https://www.morphllm.com/groq-pricing), [Gemini TTS](https://cloudprice.net/models/gemini-2.5-flash-preview-tts), [Gemini embedding](https://modelcompare.dev/models/google/gemini-embedding-001).)
+
+### How I keep tokens down
+
+- **Send only what's needed:** the top 5 chunks for chat (8 for quizzes), about 1,000 characters each, never the whole PDF.
+- **Short memory:** chat sends only the last 6 messages; the coach the last 10.
+- **Short voice answers:** voice mode asks for 2–4 sentences, and spoken text is capped at 2,000 characters.
+- **A lean agent:** low reasoning effort, a 1,200-token reply cap, short tool results and at most 8 steps. This cut a task move to about 1.6 seconds and keeps it under Groq's free per-minute limit.
+- **Capped retries:** quizzes and flashcards get at most 3 tries.
+- **Rate limits:** 20 AI requests per minute per visitor.
+- **Swappable models:** model names live in `.env`, so moving to a cheaper or newer model needs no code change.
 
 ---
 
@@ -175,6 +219,7 @@ To stay inside Groq's per-minute limit, the coach uses low reasoning, a cap on r
 - **Quizzes used outside knowledge.** Every question must now carry an evidence quote, and Zod `superRefine` checks the quote really appears in the source. On failure the error goes back to the AI, which retries (max 3).
 - **Voice cut off the first words.** Recording now waits for the recorder to really start, saves 250 ms pieces and gives the mic 300 ms to warm up.
 - **The natural voice was slow to start.** Voice answers are shorter, and the first sentence is turned into audio alone and plays while the rest is prepared.
+- **One bad tool call crashed the whole coach.** Groq checks tool schemas on its own server, so a value over a limit (300 minutes when the max is 240) rejected the entire request. The AI now sees simple types only, and the real limits are checked inside each tool: a broken rule becomes a tool error the AI reads and fixes, and the UI shows it as ✕.
 - **The agent hit Groq's free limit.** An agent resends everything after each tool. Lower reasoning, a reply cap and short tool results fixed it.
 
 ---
