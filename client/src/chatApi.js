@@ -2,13 +2,14 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 // Sends a question and reads the answer piece by piece as it arrives.
 // onStart gets the chat id and the sources; onText gets the answer so far.
-export async function sendChatMessage({ message, chatId, documentId }, { onStart, onText }) {
+// voice = true when the question was asked with the mic (the server then gives a short spoken answer)
+export async function sendChatMessage({ message, chatId, documentId, voice = false }, { onStart, onText }) {
   const token = localStorage.getItem("devtrail-token");
 
   const response = await fetch(`${API_URL}/api/chats/message`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ message, chatId, documentId }),
+    body: JSON.stringify({ message, chatId, documentId, voice }),
   });
 
   if (!response.ok) {
