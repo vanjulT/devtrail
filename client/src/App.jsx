@@ -9,6 +9,7 @@ import ChatPage from "./pages/ChatPage.jsx";
 import StudyPage from "./pages/StudyPage.jsx";
 import DeckPage from "./pages/DeckPage.jsx";
 import QuizPage from "./pages/QuizPage.jsx";
+import PlanPage from "./pages/PlanPage.jsx";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/study" element={<StudyPage />} />
         <Route path="/study/deck/:deckId" element={<DeckPage />} />
         <Route path="/study/quiz/:quizId" element={<QuizPage />} />
+        <Route path="/plan" element={<PlanPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
