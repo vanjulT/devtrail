@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/auth.js";
 import ThemeToggle from "./ThemeToggle.jsx";
+import MadeBy from "./MadeBy.jsx";
 
 function linkClass({ isActive }) {
   return `shrink-0 rounded-full px-4 py-1.5 text-sm transition-all ${
@@ -51,6 +52,10 @@ export default function AppLayout() {
       <main className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
       </main>
+
+      <footer className="relative z-10 pb-8 pt-4">
+        <MadeBy />
+      </footer>
     </div>
   );
 }
