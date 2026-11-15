@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch } from "../api.js";
+import { AuthContext } from "./auth.js";
 
-const AuthContext = createContext(null);
 const TOKEN_KEY = "devtrail-token";
 
 export function AuthProvider({ children }) {
@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
       try {
         const data = await apiFetch("/api/auth/me");
         setUser(data.user);
-      } catch (error) {
+      } catch {
         localStorage.removeItem(TOKEN_KEY); // token is old or broken: forget it
       } finally {
         setChecking(false);
@@ -58,8 +58,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }

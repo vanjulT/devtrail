@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { apiFetch } from "../api.js";
-import { useAuth } from "../context/AuthContext.jsx";
 
 const MAX_SIZE_MB = 10;
 
 const statusStyles = {
-  ready: "bg-emerald-500/15 text-emerald-300",
-  processing: "bg-amber-500/15 text-amber-300",
-  failed: "bg-red-500/15 text-red-300",
+  ready: "bg-success/15 text-success",
+  processing: "bg-amber-500/15 text-warn",
+  failed: "bg-red-500/15 text-danger",
 };
 
 function formatSize(bytes) {
@@ -19,7 +19,6 @@ function formatDate(date) {
 }
 
 export default function LibraryPage() {
-  const { user, logout } = useAuth();
   const fileInput = useRef(null);
 
   const [documents, setDocuments] = useState([]);
@@ -43,8 +42,12 @@ export default function LibraryPage() {
     }
   }
 
+  // First load when the page opens
   useEffect(() => {
-    fetchDocuments();
+    apiFetch("/api/documents")
+      .then((data) => setDocuments(data.documents))
+      .catch((err) => setLoadError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   function retryLoading() {
@@ -98,116 +101,116 @@ export default function LibraryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-6">
-      <header className="mx-auto flex max-w-5xl items-center justify-between">
-        <h1 className="text-2xl font-bold">DevTrail</h1>
-        <div className="flex items-center gap-4">
-          <span className="hidden text-slate-400 sm:inline">Hi, {user.name}</span>
-          <button onClick={logout} className="rounded-lg border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800">
-            Log out
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">Your library</h1>
+          <p className="text-sm text-muted">Upload docs, books or course notes as PDF (max {MAX_SIZE_MB} MB).</p>
+        </div>
+        <button
+          onClick={() => fileInput.current.click()}
+          disabled={uploading}
+          className="rounded-md bg-brand px-5 py-3 font-semibold text-on-brand glow hover:bg-brand-hover disabled:opacity-60"
+        >
+          {uploading ? "Uploading…" : "Upload PDF"}
+        </button>
+        <input ref={fileInput} type="file" accept="application/pdf" onChange={handleFileChosen} className="hidden" />
+      </div>
+
+      {uploadError && (
+        <p className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-danger">{uploadError}</p>
+      )}
+
+      {uploading && (
+        <div className="flex items-center gap-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-warn">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-warn border-t-transparent" />
+          Reading your PDF and preparing it for chat. This can take up to a minute for big files.
+        </div>
+      )}
+
+      {/* Loading: grey skeleton cards */}
+      {loading && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="h-32 animate-pulse rounded-md bg-raised" />
+          ))}
+        </div>
+      )}
+
+      {/* Error: could not load the list */}
+      {!loading && loadError && (
+        <div className="rounded-md border border-red-500/40 bg-red-500/10 p-6 text-center">
+          <p className="text-danger">{loadError}</p>
+          <button onClick={retryLoading} className="mt-3 rounded-md border border-red-400/50 px-4 py-2 text-sm hover:bg-red-500/20">
+            Try again
           </button>
         </div>
-      </header>
+      )}
 
-      <section className="mx-auto mt-10 max-w-5xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Your library</h2>
-            <p className="text-sm text-slate-400">Upload docs, books or course notes as PDF (max {MAX_SIZE_MB} MB).</p>
-          </div>
-          <button
-            onClick={() => fileInput.current.click()}
-            disabled={uploading}
-            className="rounded-lg bg-emerald-500 px-5 py-3 font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-60"
-          >
-            {uploading ? "Uploading…" : "Upload PDF"}
-          </button>
-          <input ref={fileInput} type="file" accept="application/pdf" onChange={handleFileChosen} className="hidden" />
+      {/* Empty: no PDFs yet */}
+      {!loading && !loadError && documents.length === 0 && (
+        <div className="rounded-md border border-dashed border-line-strong p-10 text-center">
+          <p className="text-lg">Your library is empty</p>
+          <p className="mt-2 text-muted">Upload your first PDF to start chatting with it.</p>
         </div>
+      )}
 
-        {uploadError && (
-          <p className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{uploadError}</p>
-        )}
-
-        {uploading && (
-          <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-300 border-t-transparent" />
-            Reading your PDF and preparing it for chat. This can take up to a minute for big files.
-          </div>
-        )}
-
-        {/* Loading: grey skeleton cards */}
-        {loading && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="h-32 animate-pulse rounded-xl bg-slate-800/60" />
-            ))}
-          </div>
-        )}
-
-        {/* Error: could not load the list */}
-        {!loading && loadError && (
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-center">
-            <p className="text-red-300">{loadError}</p>
-            <button onClick={retryLoading} className="mt-3 rounded-lg border border-red-400/50 px-4 py-2 text-sm hover:bg-red-500/20">
-              Try again
-            </button>
-          </div>
-        )}
-
-        {/* Empty: no PDFs yet */}
-        {!loading && !loadError && documents.length === 0 && (
-          <div className="rounded-xl border border-dashed border-slate-700 p-10 text-center">
-            <p className="text-lg">Your library is empty</p>
-            <p className="mt-2 text-slate-400">Upload your first PDF to start chatting with it.</p>
-          </div>
-        )}
-
-        {/* The list */}
-        {!loading && !loadError && documents.length > 0 && (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {documents.map((doc) => (
-              <li key={doc._id} className="flex flex-col justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900 p-4">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold break-words">{doc.title}</h3>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[doc.status]}`}>
-                      {doc.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-400">
-                    {doc.pageCount} pages · {formatSize(doc.sizeBytes)} · {formatDate(doc.createdAt)}
-                  </p>
-                  {doc.status === "failed" && <p className="text-sm text-red-300">{doc.errorMessage}</p>}
+      {/* The list */}
+      {!loading && !loadError && documents.length > 0 && (
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {documents.map((doc) => (
+            <li key={doc._id} className="flex flex-col justify-between gap-4 rounded-md border border-line bg-card p-4">
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="font-semibold break-words">{doc.title}</h2>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[doc.status]}`}>
+                    {doc.status}
+                  </span>
                 </div>
+                <p className="text-sm text-muted">
+                  {doc.pageCount} pages · {formatSize(doc.sizeBytes)} · {formatDate(doc.createdAt)}
+                </p>
+                {doc.status === "failed" && <p className="text-sm text-danger">{doc.errorMessage}</p>}
+              </div>
 
-                {confirmId === doc._id ? (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-300">Delete this PDF?</span>
-                    <button
-                      onClick={() => handleDelete(doc._id)}
-                      disabled={deletingId === doc._id}
-                      className="rounded-lg bg-red-500 px-3 py-1.5 font-medium text-white hover:bg-red-400 disabled:opacity-60"
+              {confirmId === doc._id ? (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-soft">Delete this PDF?</span>
+                  <button
+                    onClick={() => handleDelete(doc._id)}
+                    disabled={deletingId === doc._id}
+                    className="rounded-md bg-red-500 px-3 py-1.5 font-medium text-white hover:bg-red-400 disabled:opacity-60"
+                  >
+                    {deletingId === doc._id ? "Deleting…" : "Yes, delete"}
+                  </button>
+                  <button onClick={() => setConfirmId(null)} className="rounded-md px-3 py-1.5 hover:bg-raised">
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  {doc.status === "ready" ? (
+                    <Link
+                      to={`/chat?doc=${doc._id}`}
+                      className="rounded-md bg-brand/10 px-3 py-1.5 text-sm font-medium text-accent hover:bg-brand/20"
                     >
-                      {deletingId === doc._id ? "Deleting…" : "Yes, delete"}
-                    </button>
-                    <button onClick={() => setConfirmId(null)} className="rounded-lg px-3 py-1.5 hover:bg-slate-800">
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
+                      Chat with this PDF
+                    </Link>
+                  ) : (
+                    <span />
+                  )}
                   <button
                     onClick={() => setConfirmId(doc._id)}
-                    className="self-start rounded-lg px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-red-300"
+                    className="rounded-md px-3 py-1.5 text-sm text-muted hover:bg-raised hover:text-danger"
                   >
                     Delete
                   </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </main>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

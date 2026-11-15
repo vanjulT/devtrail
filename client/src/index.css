@@ -1,1 +1,167 @@
 @import "tailwindcss";
+
+/* Light mode turns on when <html> has the class "light" (set by the theme button).
+   Dark is the default look. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Fonts and colour names used everywhere (bg-page, text-ink, bg-brand…) */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, sans-serif;
+
+  /* Obsidian surfaces */
+  --color-page: #090d16;
+  --color-card: #0f1624;
+  --color-raised: #172033;
+  --color-line: #1e293b;
+  --color-line-strong: #334155;
+  --color-ink: #f8fafc;
+  --color-soft: #cbd5e1;
+  --color-muted: #94a3b8;
+  --color-faint: #64748b;
+
+  /* Muted cyan for actions, soft electric blue for citations */
+  --color-brand: #22d3ee;
+  --color-brand-hover: #67e8f9;
+  --color-on-brand: #020617;
+  --color-accent: #22d3ee;
+  --color-mint: #34d399;
+  --color-cite: #8ea6ff;
+  --color-silver: #c9d1dc;
+
+  /* Status colours keep their meaning */
+  --color-success: #6ee7a8;
+  --color-danger: #fca5a5;
+  --color-warn: #fcd34d;
+}
+
+/* Light version of the same palette */
+.light {
+  --color-page: #f3f5f8;
+  --color-card: #ffffff;
+  --color-raised: #e9edf2;
+  --color-line: #dde3ea;
+  --color-line-strong: #c5cdd8;
+  --color-ink: #0b1220;
+  --color-soft: #2b3646;
+  --color-muted: #4b5768;
+  --color-faint: #6b7686;
+  --color-brand: #0e7490;
+  --color-brand-hover: #0b5f75;
+  --color-on-brand: #ffffff;
+  --color-accent: #0e7490;
+  --color-mint: #047857;
+  --color-cite: #3b5bdb;
+  --color-silver: #475569;
+  --color-success: #15803d;
+  --color-danger: #b91c1c;
+  --color-warn: #92400e;
+}
+
+html {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* Restrained glow on primary buttons */
+.glow {
+  transition: box-shadow 300ms ease, background-color 300ms ease, transform 300ms ease;
+}
+.glow:hover {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-brand) 60%, transparent),
+    0 0 28px -6px color-mix(in oklab, var(--color-brand) 70%, transparent);
+}
+
+/* Slow fade-in, used with a small delay per element for a staggered reveal */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.reveal {
+  animation: fade-up 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; }
+  .glow { transition: none; }
+}
+
+/* ---------- Chat bubbles: round, comic-style bubbles with a little tail ---------- */
+.bubble {
+  position: relative;
+  width: fit-content;
+  border-radius: 1.4rem;
+}
+/* The tail: a small curved shape at the bottom corner, same colour as the bubble */
+.bubble::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 24px;
+  height: 22px;
+}
+.bubble-user {
+  border-bottom-right-radius: 0.35rem;
+}
+.bubble-user::after {
+  right: -11px;
+  background: radial-gradient(circle at 100% 0, transparent 17px, var(--color-brand) 17.5px);
+}
+.bubble-ai {
+  border-bottom-left-radius: 0.35rem;
+}
+.bubble-ai::after {
+  left: -11px;
+  background: radial-gradient(circle at 0 0, transparent 17px, var(--color-raised) 17.5px);
+}
+
+/* ---------- Chat effects ---------- */
+/* New messages slide up softly */
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.msg-in {
+  animation: msg-in 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Three dots that fade in turn while DevTrail searches */
+@keyframes dot-fade {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+.typing-dot {
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  animation: dot-fade 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Blinking cursor at the end of an answer that is still being written */
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+.stream-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--color-brand);
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-in, .typing-dot, .stream-caret { animation: none; }
+}
