@@ -220,6 +220,7 @@ So one active user doing about 12 sessions a month would cost about **$0.35 per 
 - **Voice cut off the first words.** Recording now waits for the recorder to really start, saves 250 ms pieces and gives the mic 300 ms to warm up.
 - **The natural voice was slow to start.** Voice answers are shorter, and the first sentence is turned into audio alone and plays while the rest is prepared.
 - **One bad tool call crashed the whole coach.** Groq checks tool schemas on its own server, so a value over a limit (300 minutes when the max is 240) rejected the entire request. The AI now sees simple types only, and the real limits are checked inside each tool: a broken rule becomes a tool error the AI reads and fixes, and the UI shows it as ✕.
+- **The coach claimed an action that failed.** After a failed tool call it once replied "I added it". Now the prompt forbids claiming an action without a successful tool call, and the server adds "⚠️ Not saved: …" to the reply whenever a tool's last call failed, so the user always gets the truth.
 - **The agent hit Groq's free limit.** An agent resends everything after each tool. Lower reasoning, a reply cap and short tool results fixed it.
 
 ---
