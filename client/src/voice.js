@@ -81,7 +81,7 @@ export function unlockAudio() {
 export function cleanForSpeech(text) {
   return text
     .replace(/```[\s\S]*?```/g, " (see the code on screen) ")
-    .replace(/\[\d+\]/g, "")
+    .replace(/\[\d+\]|【\s*\d+\s*】/g, "")
     .replace(/[*_#`>]/g, "")
     .replace(/\s+/g, " ")
     .trim();

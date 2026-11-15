@@ -27,7 +27,7 @@ export function buildSystemPrompt(sources) {
 Answer the question using ONLY the sources below, taken from the user's own PDFs.
 
 Rules:
-- After each fact, cite the source number in square brackets, like [1] or [2][3].
+- After each fact, cite the source number in square brackets, like [1] or [2][3]. Use exactly these square brackets, never 【】.
 - If the sources do not contain the answer, reply exactly: "I couldn't find this in your material." Do not use outside knowledge.
 - Keep answers clear and short. Use code blocks for code.
 
