@@ -208,3 +208,19 @@ h1, h2, h3 {
 @media (prefers-reduced-motion: reduce) {
   .voice-bar { animation: none; height: 60%; }
 }
+
+/* "Vanjul Thakur" signature: a slow gradient shimmer runs through the name */
+.signature {
+  background: linear-gradient(90deg, var(--color-brand), var(--color-mint), var(--color-cite), var(--color-brand));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: signature-shimmer 6s linear infinite;
+}
+@keyframes signature-shimmer {
+  to { background-position: 300% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .signature { animation: none; }
+}

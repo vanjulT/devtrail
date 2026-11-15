@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/auth.js";
 import ThemeToggle from "../components/ThemeToggle.jsx";
+import MadeBy from "../components/MadeBy.jsx";
 
 // Thin wireframe icons (1.5px strokes, no fill), drawn inline so no icon library is needed
 function Icon({ children }) {
@@ -457,6 +458,9 @@ export default function LandingPage() {
               GitHub
             </a>
           </nav>
+        </div>
+        <div className="border-t border-line/60 py-6">
+          <MadeBy />
         </div>
       </footer>
     </div>
