@@ -93,6 +93,42 @@ async function findOwnTask(userId, taskId) {
   return task;
 }
 
+// What the AI is shown: simple types only (text, number, true/false).
+// Groq checks a tool's schema on its own server and rejects the WHOLE request if the AI breaks a limit
+// (for example "max 240 minutes"), so the coach would crash. The real limits are checked inside execute
+// instead: a broken rule then becomes a tool error that the AI reads and fixes (and the UI shows ✕).
+const looseTaskSchema = z.object({
+  date: z.string().describe("Day of the task, YYYY-MM-DD"),
+  title: z.string().describe("What to do, 3 to 120 characters, e.g. 'Read chapter 2 of React Basics: hooks'"),
+  minutes: z.number().describe("How long it takes: 5 to 240 minutes"),
+  type: z.string().describe("One of: read, flashcards, quiz, review, practice"),
+  documentId: z.string().nullish().describe("Id of the PDF this task uses (from list_documents), if any"),
+  quizId: z.string().nullish().describe("Id of a quiz made with create_quiz, if this is a quiz task"),
+});
+
+const looseChangesSchema = z.object({
+  date: z.string().nullish().describe("New day, YYYY-MM-DD"),
+  title: z.string().nullish().describe("New title, 3 to 120 characters"),
+  minutes: z.number().nullish().describe("New length: 5 to 240 minutes"),
+  done: z.boolean().nullish().describe("true when the user finished the task"),
+});
+
+const scheduleSchema = z.object({
+  from: dateSchema,
+  days: z.number().int().min(1).max(MAX_DAYS),
+});
+
+// Checks the real rules; a broken one throws a clear message the AI can act on
+function strictCheck(schema, value, label) {
+  const result = schema.safeParse(value);
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    const field = issue.path.join(".") || "input";
+    throw new Error(`${label}: ${field} is not valid (${issue.message}). Fix it and call the tool again, or tell the user the limit.`);
+  }
+  return result.data;
+}
+
 // ---------- The tools the study coach can use ----------
 // Each tool returns a "summary" sentence: the chat shows it under the tool name.
 
@@ -114,10 +150,11 @@ export function createAgentTools(userId) {
       description:
         "Get the study tasks already planned between two dates (with their ids), and how many flashcards are due for review.",
       inputSchema: z.object({
-        from: dateSchema.describe("First day, YYYY-MM-DD"),
-        days: z.number().int().min(1).max(MAX_DAYS).describe("How many days to look at, from the first day"),
+        from: z.string().describe("First day, YYYY-MM-DD"),
+        days: z.number().describe(`How many days to look at, from the first day (1 to ${MAX_DAYS})`),
       }),
-      execute: async ({ from, days }) => {
+      execute: async (input) => {
+        const { from, days } = strictCheck(scheduleSchema, input, "get_schedule");
         const to = addDays(from, days - 1);
         const tasks = await StudyTask.find({ userId, date: { $gte: from, $lte: to } }).sort({ date: 1, createdAt: 1 });
         const dueCards = await countDueCards(userId);
@@ -133,9 +170,14 @@ export function createAgentTools(userId) {
     create_study_tasks: tool({
       description: `Add one or more tasks to the study plan (at most ${MAX_TASKS_PER_CALL} per call).`,
       inputSchema: z.object({
-        tasks: z.array(newTaskSchema).min(1).max(MAX_TASKS_PER_CALL),
+        tasks: z.array(looseTaskSchema).describe(`1 to ${MAX_TASKS_PER_CALL} tasks`),
       }),
-      execute: async ({ tasks }) => {
+      execute: async (input) => {
+        if (input.tasks.length < 1 || input.tasks.length > MAX_TASKS_PER_CALL) {
+          throw new Error(`Send between 1 and ${MAX_TASKS_PER_CALL} tasks per call (you sent ${input.tasks.length}).`);
+        }
+        const tasks = input.tasks.map((task, i) => strictCheck(newTaskSchema, task, `Task ${i + 1}`));
+
         // Check every PDF and quiz belongs to this user before saving anything
         for (const task of tasks) {
           if (task.documentId) await findOwnDocument(userId, task.documentId);
@@ -157,10 +199,11 @@ export function createAgentTools(userId) {
 
     update_study_task: tool({
       description: "Change one task: move it to another day, rename it, change its minutes, or mark it done or not done.",
-      inputSchema: taskChangesSchema.extend({
+      inputSchema: looseChangesSchema.extend({
         taskId: z.string().describe("Id of the task, from get_schedule"),
       }),
-      execute: async ({ taskId, ...changes }) => {
+      execute: async ({ taskId, ...input }) => {
+        const changes = strictCheck(taskChangesSchema, input, "Change");
         const task = await findOwnTask(userId, taskId);
         const given = onlyGiven(changes);
         if (Object.keys(given).length === 0) throw new Error("Send at least one change: date, title, minutes or done.");
@@ -185,11 +228,11 @@ export function createAgentTools(userId) {
         "Make a real 5-question quiz from one PDF (takes about 10 seconds). Returns a quizId you can attach to a quiz task.",
       inputSchema: z.object({
         documentId: z.string().describe("Id of the PDF, from list_documents"),
-        topic: z.string().max(100).nullish().describe("Optional topic to focus on, e.g. 'React hooks'"),
+        topic: z.string().nullish().describe("Optional topic to focus on (short), e.g. 'React hooks'"),
       }),
       execute: async ({ documentId, topic }) => {
         const document = await findOwnDocument(userId, documentId);
-        const cleanTopic = (topic || "").trim();
+        const cleanTopic = (topic || "").trim().slice(0, 100);
         const result = await generateQuiz({ userId, documentId, topic: cleanTopic });
         const quiz = await Quiz.create({
           userId,
