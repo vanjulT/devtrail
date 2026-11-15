@@ -4,12 +4,19 @@ import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/auth.js";
 import documentRoutes from "./routes/documents.js";
+import chatRoutes from "./routes/chats.js";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Only our React app is allowed to call this API
-app.use(cors({ origin: process.env.CLIENT_URL }));
+// Only our React app is allowed to call this API.
+// exposedHeaders lets the browser read the chat id and the sources we send with each answer.
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    exposedHeaders: ["X-Chat-Id", "X-Sources"],
+  })
+);
 
 // Lets the server read JSON sent in requests
 app.use(express.json());
@@ -21,6 +28,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/api/chats", chatRoutes);
 
 // Connect to MongoDB first, then start the server
 async function start() {
