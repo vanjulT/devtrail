@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 import authRoutes from "./routes/auth.js";
 import documentRoutes from "./routes/documents.js";
 import chatRoutes from "./routes/chats.js";
+import deckRoutes from "./routes/decks.js";
+import quizRoutes from "./routes/quizzes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -29,6 +31,8 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/decks", deckRoutes);
+app.use("/api/quizzes", quizRoutes);
 
 // Connect to MongoDB first, then start the server
 async function start() {
