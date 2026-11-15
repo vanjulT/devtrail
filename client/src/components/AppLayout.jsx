@@ -29,6 +29,7 @@ export default function AppLayout() {
             <nav className="flex gap-1" aria-label="App">
               <NavLink to="/library" className={linkClass}>Library</NavLink>
               <NavLink to="/chat" className={linkClass}>Chat</NavLink>
+              <NavLink to="/study" className={linkClass}>Study</NavLink>
             </nav>
           </div>
           <div className="flex items-center gap-3">

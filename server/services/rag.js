@@ -1,12 +1,12 @@
 import { embedQuery } from "./embeddings.js";
 import { searchChunks } from "./vectorStore.js";
 
-export const TOP_K = 5; // how many pieces of the PDF the AI gets for each question
+export const TOP_K = 5; // how many pieces of the PDF the chat gets for each question
 
 // Finds the pieces of the user's PDFs closest in meaning to the question
-export async function findSources({ userId, question, documentId }) {
+export async function findSources({ userId, question, documentId, topK = TOP_K }) {
   const vector = await embedQuery(question);
-  const matches = await searchChunks({ userId, vector, topK: TOP_K, documentId });
+  const matches = await searchChunks({ userId, vector, topK, documentId });
 
   return matches.map((match, i) => ({
     number: i + 1,

@@ -6,6 +6,9 @@ import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import LibraryPage from "./pages/LibraryPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
+import StudyPage from "./pages/StudyPage.jsx";
+import DeckPage from "./pages/DeckPage.jsx";
+import QuizPage from "./pages/QuizPage.jsx";
 
 function App() {
   return (
@@ -26,6 +29,9 @@ function App() {
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/chat/:chatId" element={<ChatPage />} />
+        <Route path="/study" element={<StudyPage />} />
+        <Route path="/study/deck/:deckId" element={<DeckPage />} />
+        <Route path="/study/quiz/:quizId" element={<QuizPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -165,3 +165,33 @@ h1, h2, h3 {
 @media (prefers-reduced-motion: reduce) {
   .msg-in, .typing-dot, .stream-caret { animation: none; }
 }
+
+/* ---------- Flashcards: a card that flips in 3D ---------- */
+.flip-card {
+  perspective: 1200px;
+}
+.flip-inner {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transition: transform 550ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+.flip-card.is-flipped .flip-inner {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(0deg); /* gives each face its own layer, so Safari hides the back side correctly */
+}
+.flip-back {
+  transform: rotateY(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .flip-inner { transition: none; }
+}
