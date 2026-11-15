@@ -13,6 +13,14 @@ const model = groq(process.env.GROQ_MODEL || "openai/gpt-oss-120b");
 const HISTORY_LENGTH = 6; // the AI also sees the last 6 messages, for follow-up questions
 const MAX_QUESTION_LENGTH = 2000;
 
+// Extra rule for questions asked with the mic: short spoken answers start playing much sooner
+const VOICE_RULE = `
+
+This question was asked out loud and your answer will be read aloud.
+- Answer in 2 to 4 short sentences of plain, spoken English.
+- No lists, no headings, no code blocks.
+- Still cite the sources like [1].`;
+
 router.use(requireAuth);
 
 // GET /api/chats: the user's chats, newest first (without the messages)
@@ -60,9 +68,9 @@ router.delete("/:id", async (req, res) => {
 });
 
 // POST /api/chats/message: ask a question, get a streamed answer
-// Body: { message, chatId? (continue a chat), documentId? (only search this PDF) }
+// Body: { message, chatId? (continue a chat), documentId? (only search this PDF), voice? (asked with the mic) }
 router.post("/message", async (req, res) => {
-  const { message, chatId, documentId } = req.body;
+  const { message, chatId, documentId, voice } = req.body;
 
   if (!message || !message.trim()) {
     return res.status(400).json({ message: "Please type a question." });
@@ -96,12 +104,12 @@ router.post("/message", async (req, res) => {
       documentId: chat.documentId,
     });
 
-    // 3. Ask the AI, with the sources and the last few messages
+    // 3. Ask the AI, with the sources and the last few messages (shorter answers for voice questions)
     const history = chat.messages.slice(-HISTORY_LENGTH).map((m) => ({ role: m.role, content: m.content }));
     let aiError = null;
     const result = streamText({
       model,
-      system: buildSystemPrompt(sources),
+      system: buildSystemPrompt(sources) + (voice ? VOICE_RULE : ""),
       messages: [...history, { role: "user", content: message }],
       onError: ({ error }) => {
         aiError = error; // the stream does not throw by itself, so we remember the error

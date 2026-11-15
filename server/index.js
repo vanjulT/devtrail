@@ -7,6 +7,7 @@ import documentRoutes from "./routes/documents.js";
 import chatRoutes from "./routes/chats.js";
 import deckRoutes from "./routes/decks.js";
 import quizRoutes from "./routes/quizzes.js";
+import voiceRoutes from "./routes/voice.js";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -33,6 +34,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/decks", deckRoutes);
 app.use("/api/quizzes", quizRoutes);
+app.use("/api/voice", voiceRoutes);
 
 // Connect to MongoDB first, then start the server
 async function start() {
