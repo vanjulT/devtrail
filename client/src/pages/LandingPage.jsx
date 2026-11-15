@@ -345,9 +345,6 @@ export default function LandingPage() {
           <div className="hidden gap-8 text-sm text-muted md:flex">
             <a href="#features" className="transition-colors hover:text-brand">Features</a>
             <a href="#how-it-works" className="transition-colors hover:text-brand">How it works</a>
-            <a href="https://github.com/vanjulT/devtrail" target="_blank" rel="noreferrer" className="transition-colors hover:text-brand">
-              GitHub
-            </a>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -454,9 +451,6 @@ export default function LandingPage() {
           <nav className="flex flex-wrap gap-6" aria-label="Footer">
             <a href="#features" className="transition-colors hover:text-brand">Features</a>
             <Link to="/login" className="transition-colors hover:text-brand">Log in</Link>
-            <a href="https://github.com/vanjulT/devtrail" target="_blank" rel="noreferrer" className="transition-colors hover:text-brand">
-              GitHub
-            </a>
           </nav>
         </div>
         <div className="border-t border-line/60 py-6">

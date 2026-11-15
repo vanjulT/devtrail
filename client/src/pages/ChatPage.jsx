@@ -15,9 +15,32 @@ const VOICE_LABELS = {
 
 const EXAMPLES = ["Summarise this document", "What are the key concepts?", "Explain the hardest topic simply"];
 
+// Some models write citations as 【3】 instead of [3]: turn them into the normal form first
+function normalizeCitations(text) {
+  return text.replace(/【\s*(\d+)\s*】/g, "[$1]");
+}
+
+// Shows **bold** and `code` inside a piece of the answer; everything else stays plain text
+function InlineFormat({ text }) {
+  const pieces = text.split(/(\*\*[^*\n]+\*\*|`[^`\n]+`)/g);
+  return pieces.map((piece, i) => {
+    if (piece.length > 4 && piece.startsWith("**") && piece.endsWith("**")) {
+      return <strong key={i} className="font-semibold text-ink">{piece.slice(2, -2)}</strong>;
+    }
+    if (piece.length > 2 && piece.startsWith("`") && piece.endsWith("`")) {
+      return (
+        <code key={i} className="rounded bg-page/70 px-1.5 py-0.5 font-mono text-[0.9em] text-brand">
+          {piece.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={i}>{piece}</span>;
+  });
+}
+
 // Shows the answer text and turns [1], [2]… into buttons that open the source
 function AnswerText({ text, sources, onCite }) {
-  const parts = text.split(/(\[\d+\])/g);
+  const parts = normalizeCitations(text).split(/(\[\d+\])/g);
   return (
     <p className="whitespace-pre-wrap leading-relaxed">
       {parts.map((part, i) => {
@@ -35,7 +58,7 @@ function AnswerText({ text, sources, onCite }) {
             </button>
           );
         }
-        return <span key={i}>{part}</span>;
+        return <InlineFormat key={i} text={part} />;
       })}
     </p>
   );
