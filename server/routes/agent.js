@@ -54,7 +54,8 @@ How to work:
 - Use the real PDF titles in task titles and link each task to its PDF with documentId. Never invent PDFs.
 - To move, rename, finish or change a task use update_study_task. To remove one use delete_study_task.
 - create_quiz makes a real quiz and takes time: only use it when the user asks for a quiz or for a plan with a quiz in it, then add a quiz task with its quizId.
-- If a tool returns an error, read it, fix your input and try once more.
+- If a tool returns an error, read it, then either call the tool again with corrected input, or tell the user plainly that it failed and why.
+- Never say a task was added, moved, changed or deleted unless that tool call succeeded in this conversation.
 - If something important is missing (for example no deadline or no time per day), ask one short question instead of guessing.
 - Never plan anything before today.
 - When you are done, reply in 2 to 4 short sentences: what you did, with the dates. Do not list every task: the user sees the plan on the dashboard.`;
@@ -116,7 +117,15 @@ router.post("/", async (req, res) => {
         summary: part.type === "tool-result" ? part.output?.summary || "Done" : errorText(part.error),
       }));
 
-    const text = result.text.trim() || "I updated your plan. Have a look at the dashboard.";
+    // Safety net: if a tool's LAST call failed, say so plainly, even if the model's reply sounds like it worked.
+    // (The model once said "I added it" after a failed call; code can't make that mistake.)
+    const lastCallOfEachTool = new Map(toolSteps.map((step) => [step.tool, step]));
+    const notSaved = [...lastCallOfEachTool.values()].filter((step) => !step.ok);
+    const warning = notSaved.length
+      ? `\n\n⚠️ Not saved: ${notSaved.map((step) => `${step.tool} failed (${step.summary.split(". Fix it")[0]})`).join("; ")}.`
+      : "";
+
+    const text = (result.text.trim() || "Done. Have a look at the dashboard.") + warning;
     res.json({ text, toolSteps });
   } catch (error) {
     console.error(`[coach] failed after ${seconds()}s:`, error?.message || error);
