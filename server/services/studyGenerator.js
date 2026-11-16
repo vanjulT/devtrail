@@ -93,7 +93,10 @@ const GROUNDING_RULES =
   "ask only about what the source itself says (for example which module or week covers that topic), not about how the topic works. " +
   "Only include code that appears in the sources; otherwise leave 'code' empty. " +
   "For every item, put in 'evidence' a quote copied word for word from that source which proves the answer. " +
-  "Never mention source numbers like [1] in the questions, options or cards: say \"the document\" or \"the course\" instead.";
+  "Never mention source numbers like [1] in the questions, options or cards: say \"the document\" or \"the course\" instead. " +
+  "LANGUAGE: write the title, cards, questions, options and explanations in the SAME language as the sources " +
+  "(a French document gets French flashcards). Copy every evidence quote exactly as it is written in the source, " +
+  "in its original language: never translate or rephrase a quote.";
 
 // Finds the parts of the PDF to build the cards or quiz from
 async function getMaterial({ userId, documentId, topic }) {
@@ -117,7 +120,7 @@ async function generateValidated({ schema, name, system, prompt }) {
     try {
       // On a new try, tell the AI why the last answer was rejected
       const feedback = lastError
-        ? `\n\nYour previous answer was rejected: ${String(lastError.message).slice(0, 600)}\nFix it. Copy every evidence quote word for word from the sources.`
+        ? `\n\nYour previous answer was rejected: ${String(lastError.message).slice(0, 600)}\nFix it. Copy every evidence quote word for word from the sources, in their original language (do not translate).`
         : "";
       const { output } = await generateText({
         model,
