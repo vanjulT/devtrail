@@ -7,9 +7,10 @@ import { embedChunks } from "../services/embeddings.js";
 import { saveChunks, deleteChunks } from "../services/vectorStore.js";
 
 const router = express.Router();
-const MAX_SIZE_MB = 10;
+const MAX_SIZE_MB = 25;
+const MAX_CHUNKS = 1500; // about 600 pages of text: protects the free AI limits and the 512 MB server
 
-// Keep the file in memory (we only need its text), only PDFs, max 10 MB
+// Keep the file in memory (we only need its text), only PDFs, max 25 MB
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_SIZE_MB * 1024 * 1024 },
@@ -67,6 +68,11 @@ router.post("/", receivePdf, async (req, res) => {
 
     if (chunks.length === 0) {
       throw new Error("No text found in this PDF. Is it a scanned image?");
+    }
+    if (chunks.length > MAX_CHUNKS) {
+      throw new Error(
+        `This PDF has too much text (${totalPages} pages). The limit is about 600 pages: split it into smaller PDFs and upload them one by one.`
+      );
     }
 
     const embeddings = await embedChunks(chunks.map((chunk) => chunk.text));

@@ -27,7 +27,7 @@ Two accounts, so you can check that each user only sees their own data.
 
 | Feature | What it does |
 | --- | --- |
-| **Library** | Upload PDFs (max 10 MB). Each one is read page by page, cut into chunks and stored as vectors in your private space. |
+| **Library** | Upload PDFs (max 25 MB, about 600 pages of text). Each one is read page by page, cut into chunks and stored as vectors in your private space. |
 | **RAG chat** | Answers only from your PDFs, streamed word by word, with clickable citations `[1]` that open the source text and page. Says *"I couldn't find this in your material."* instead of guessing. |
 | **Flashcards & quizzes** | 10 cards or 5 questions from a PDF and topic. Every item must quote its source word for word, checked with Zod. Cards use spaced repetition (Leitner boxes: 0, 1, 3, 7, 14 days). |
 | **Voice** | Ask with your mic (Whisper), hear a natural answer (Gemini voice) that starts on the first sentence. Falls back to the browser's voice if needed. |
