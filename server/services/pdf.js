@@ -1,4 +1,4 @@
-import { extractText } from "unpdf";
+import { getDocumentProxy } from "unpdf";
 
 // Each piece is about 1000 characters (roughly one section of a page).
 // The 150-character overlap keeps a sentence from being cut in half between two pieces.
@@ -12,10 +12,29 @@ function countLetters(text) {
   return (text.match(/\p{L}/gu) || []).length;
 }
 
-// Returns one string per page
+// Returns one string per page.
+// Pages are read ONE AT A TIME and pdf.js's cache is emptied after each one.
+// Without that, an 83-page scanned PDF used ~760 MB and crashed the free Render server (512 MB).
 export async function readPdfPages(buffer) {
-  const { totalPages, text } = await extractText(new Uint8Array(buffer), { mergePages: false });
-  return { totalPages, pages: text };
+  const pdf = await getDocumentProxy(new Uint8Array(buffer));
+  const pages = [];
+  try {
+    for (let number = 1; number <= pdf.numPages; number++) {
+      const page = await pdf.getPage(number);
+      const content = await page.getTextContent();
+      pages.push(
+        content.items
+          .filter((item) => item.str != null)
+          .map((item) => item.str + (item.hasEOL ? "\n" : ""))
+          .join("")
+      );
+      page.cleanup();
+      await pdf.cleanup(); // free the fonts and images pdf.js keeps in its cache, before reading the next page
+    }
+    return { totalPages: pdf.numPages, pages };
+  } finally {
+    await pdf.loadingTask.destroy(); // free the whole document from memory
+  }
 }
 
 // Cuts every page into pieces and remembers which page each piece came from
