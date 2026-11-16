@@ -12,6 +12,7 @@ const EXAMPLES = [
 // Each tool gets an icon and a readable name in the chat
 const TOOL_LABELS = {
   list_documents: { icon: "📄", name: "Looked at your PDFs" },
+  get_document_topics: { icon: "🔎", name: "Read the PDF topics" },
   get_schedule: { icon: "📅", name: "Checked your plan" },
   create_study_tasks: { icon: "➕", name: "Added tasks" },
   update_study_task: { icon: "✏️", name: "Changed a task" },

@@ -31,7 +31,7 @@ Two accounts, so you can check that each user only sees their own data.
 | **RAG chat** | Answers only from your PDFs, streamed word by word, with clickable citations `[1]` that open the source text and page. Says *"I couldn't find this in your material."* instead of guessing. |
 | **Flashcards & quizzes** | 10 cards or 5 questions from a PDF and topic. Every item must quote its source word for word, checked with Zod. Cards use spaced repetition (Leitner boxes: 0, 1, 3, 7, 14 days). |
 | **Voice** | Ask with your mic (Whisper), hear a natural answer (Gemini voice) that starts on the first sentence. Falls back to the browser's voice if needed. |
-| **Study coach (agent)** | Plans your week with 6 tools. Every tool it uses is shown in the chat, and the plan dashboard stays in sync. |
+| **Study coach (agent)** | Plans your week with 7 tools, using the real topics and pages of your PDFs. Every tool it uses is shown in the chat, and the plan dashboard stays in sync. |
 
 | Chat with citations | Quiz with evidence |
 | --- | --- |
@@ -75,11 +75,12 @@ sequenceDiagram
 
 ### The study coach (agent)
 
-The coach runs `generateText` with 6 tools and stops after at most 8 steps (`stopWhen: isStepCount(8)`):
+The coach runs `generateText` with 7 tools and stops after at most 8 steps (`stopWhen: isStepCount(8)`):
 
 | Tool | What it does |
 | --- | --- |
 | `list_documents` | The user's ready PDFs |
+| `get_document_topics` | Excerpts spread over one PDF (with pages), so tasks name real topics |
 | `get_schedule` | Tasks between two dates (with ids) + flashcards due |
 | `create_study_tasks` | Adds 1 to 30 tasks |
 | `update_study_task` | Moves, renames, changes minutes or marks done |

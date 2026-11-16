@@ -45,3 +45,14 @@ export async function deleteChunks({ userId, documentId, chunkCount }) {
     await index.deleteMany({ ids: ids.slice(i, i + 1000) });
   }
 }
+
+// Reads some pieces of one PDF by their position (0 = first piece), in page order.
+// The study coach uses this to see what a PDF is about, so it can plan real topics.
+export async function getChunksByPosition({ userId, documentId, positions }) {
+  const ids = positions.map((i) => chunkId(documentId, i));
+  const result = await userIndex(userId).fetch({ ids });
+  return ids
+    .map((id) => result.records?.[id]?.metadata)
+    .filter(Boolean)
+    .map((meta) => ({ page: meta.page, text: meta.text }));
+}
