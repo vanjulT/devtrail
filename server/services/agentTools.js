@@ -6,10 +6,13 @@ import Document from "../models/Document.js";
 import Deck from "../models/Deck.js";
 import Quiz from "../models/Quiz.js";
 import { generateQuiz } from "./studyGenerator.js";
+import { getChunksByPosition } from "./vectorStore.js";
 
 export const TASK_TYPES = ["read", "flashcards", "quiz", "review", "practice"];
 const MAX_TASKS_PER_CALL = 30;
 const MAX_DAYS = 60;
+const TOPIC_SAMPLES = 20; // how many pieces of a PDF the coach sees to learn its topics
+const SAMPLE_CHARACTERS = 160; // only the start of each piece (headings are usually there): keeps the AI call small
 
 // ---------- Small helpers (also used by routes/tasks.js) ----------
 
@@ -142,6 +145,29 @@ export function createAgentTools(userId) {
         return {
           documents: documents.map((doc) => ({ id: String(doc._id), title: doc.title, pages: doc.pageCount })),
           summary: documents.length ? `${documents.length} PDF(s): ${documents.map((d) => d.title).join(", ")}` : "No PDFs yet",
+        };
+      },
+    }),
+
+    get_document_topics: tool({
+      description:
+        "See what one PDF is about: the start of pieces taken evenly from the whole PDF, in page order, with their page numbers. Use it to name the real topics and pages in reading tasks.",
+      inputSchema: z.object({ documentId: z.string().describe("Id of the PDF, from list_documents") }),
+      execute: async ({ documentId }) => {
+        const document = await findOwnDocument(userId, documentId);
+        const total = document.chunkCount || 0;
+        if (total === 0) throw new Error("This PDF has no text pieces. Plan with its title only.");
+
+        // Pick pieces spread evenly from the first page to the last
+        const count = Math.min(TOPIC_SAMPLES, total);
+        const positions = [...new Set(Array.from({ length: count }, (_, i) => Math.floor((i * total) / count)))];
+        const pieces = await getChunksByPosition({ userId, documentId, positions });
+
+        return {
+          title: document.title,
+          pages: document.pageCount,
+          excerpts: pieces.map((piece) => ({ page: piece.page, start: piece.text.slice(0, SAMPLE_CHARACTERS) })),
+          summary: `Read ${pieces.length} parts of "${document.title}" (${document.pageCount} pages)`,
         };
       },
     }),
