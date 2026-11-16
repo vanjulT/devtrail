@@ -4,6 +4,13 @@ import { extractText } from "unpdf";
 // The 150-character overlap keeps a sentence from being cut in half between two pieces.
 export const CHUNK_SIZE = 1000;
 export const CHUNK_OVERLAP = 150;
+// A page needs at least this many letters to count as text.
+// Scanned PDFs often give only bullets or symbols ("◇ ◇ ◇"): the AI can't learn or quote anything from that.
+const MIN_LETTERS_PER_PAGE = 20;
+
+function countLetters(text) {
+  return (text.match(/\p{L}/gu) || []).length;
+}
 
 // Returns one string per page
 export async function readPdfPages(buffer) {
@@ -17,7 +24,7 @@ export function chunkPages(pages) {
 
   pages.forEach((pageText, pageIndex) => {
     const clean = pageText.replace(/\s+/g, " ").trim();
-    if (!clean) return; // skip empty pages (for example, a page with only an image)
+    if (countLetters(clean) < MIN_LETTERS_PER_PAGE) return; // skip pages with no real text (for example, a scanned image)
 
     let start = 0;
     while (start < clean.length) {

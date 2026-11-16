@@ -67,7 +67,7 @@ router.post("/", receivePdf, async (req, res) => {
     const chunks = chunkPages(pages);
 
     if (chunks.length === 0) {
-      throw new Error("No text found in this PDF. Is it a scanned image?");
+      throw new Error("No readable text in this PDF: its pages are images (a scan or an export as pictures). Run it through OCR first (for example Adobe Scan or ocrmypdf), then upload the new PDF.");
     }
     if (chunks.length > MAX_CHUNKS) {
       throw new Error(
