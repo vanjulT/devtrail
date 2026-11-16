@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch } from "../api.js";
 
-const MAX_SIZE_MB = 10;
+const MAX_SIZE_MB = 25; // must match the server (routes/documents.js)
 
 const statusStyles = {
   ready: "bg-success/15 text-success",
