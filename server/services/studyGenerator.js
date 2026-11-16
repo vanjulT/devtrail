@@ -113,6 +113,28 @@ async function getMaterial({ userId, documentId, topic }) {
   return { sources, text };
 }
 
+// The AI SDK only says "response did not match schema" and hides the real reason inside error.cause.
+// This digs out the exact Zod problems (which field, what's wrong), so the log and the retry are precise.
+function explainError(error) {
+  let current = error;
+  for (let depth = 0; current && depth < 5; depth++) {
+    if (Array.isArray(current.issues) && current.issues.length > 0) {
+      return current.issues
+        .slice(0, 6)
+        .map((issue) => {
+          const path = (issue.path || []).map((part) => (typeof part === "object" ? part.key : part)).join(".");
+          return `${path || "answer"}: ${issue.message}`;
+        })
+        .join("; ");
+    }
+    current = current.cause;
+  }
+  if (error?.text !== undefined) {
+    return "Your answer was not valid JSON for the form (it may have been cut off). Send the complete object.";
+  }
+  return String(error?.message || error);
+}
+
 // Asks the AI to fill in the form. If Zod says the result is wrong, it asks again.
 async function generateValidated({ schema, name, system, prompt }) {
   let lastError;
@@ -120,7 +142,7 @@ async function generateValidated({ schema, name, system, prompt }) {
     try {
       // On a new try, tell the AI why the last answer was rejected
       const feedback = lastError
-        ? `\n\nYour previous answer was rejected: ${String(lastError.message).slice(0, 600)}\nFix it. Copy every evidence quote word for word from the sources, in their original language (do not translate).`
+        ? `\n\nYour previous answer was rejected: ${explainError(lastError).slice(0, 800)}\nFix it. Copy every evidence quote word for word from the sources, in their original language (do not translate).`
         : "";
       const { output } = await generateText({
         model,
@@ -132,10 +154,10 @@ async function generateValidated({ schema, name, system, prompt }) {
       return output; // already checked by Zod, quotes included
     } catch (error) {
       lastError = error;
-      console.warn(`[${name}] try ${attempt} failed: ${error.message}`);
+      console.warn(`[${name}] try ${attempt} failed: ${explainError(error)}`);
     }
   }
-  throw new Error(`The AI could not produce a valid ${name} after ${MAX_TRIES} tries. ${lastError?.message || ""}`);
+  throw new Error(`The AI could not produce a valid ${name} after ${MAX_TRIES} tries. Try again, or add a topic to focus it.`);
 }
 
 // Turns the source number into the page it came from
