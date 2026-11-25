@@ -8,7 +8,7 @@ Milestone 5 · Flavour B (Developer learning companion) · WSCube Full Stack Men
 
 > The API runs on Render's free plan and sleeps after 15 minutes. The first request after that can take about 50 seconds.
 
-**Demo video (2–3 min):** _link coming soon_
+**Demo video (2–3 min):** [Watch the demo on Google Drive](https://drive.google.com/file/d/1Io9wjipjVFu-C-dEDx6M8PAXCYBMgqwc/view?usp=share_link)
 
 ### Test accounts
 
@@ -27,7 +27,7 @@ Two accounts, so you can check that each user only sees their own data.
 
 | Feature | What it does |
 | --- | --- |
-| **Library** | Upload PDFs (max 25 MB, about 600 pages of text). Each one is read page by page, cut into chunks and stored as vectors in your private space. |
+| **Library** | Upload PDFs (max 25 MB, about 600 pages of text). Each one is read page by page, cut into chunks and stored as vectors in your private space. Works in any language; scanned PDFs (pages that are only images) are refused with a clear message to run OCR first. |
 | **RAG chat** | Answers only from your PDFs, streamed word by word, with clickable citations `[1]` that open the source text and page. Says *"I couldn't find this in your material."* instead of guessing. |
 | **Flashcards & quizzes** | 10 cards or 5 questions from a PDF and topic. Every item must quote its source word for word, checked with Zod. Cards use spaced repetition (Leitner boxes: 0, 1, 3, 7, 14 days). |
 | **Voice** | Ask with your mic (Whisper), hear a natural answer (Gemini voice) that starts on the first sentence. Falls back to the browser's voice if needed. |
@@ -176,7 +176,7 @@ All routes except register, login and health need `Authorization: Bearer <token>
 | MongoDB Atlas | App data | M0 (free) | 512 MB |
 | Pinecone | Vectors | Starter (free) | One index (768 dims) |
 | Groq | Chat, quizzes, coach, Whisper | Free | 8,000 tokens per minute on gpt-oss-120b |
-| Google Gemini | Embeddings, voice | Free tier | Daily request limits (the browser voice takes over) |
+| Google Gemini | Embeddings, voice | Free tier | 100 embeddings per minute (big PDFs are sent in batches of 90 with a pause); daily voice limits (the browser voice takes over) |
 
 ### Models and why
 
@@ -209,7 +209,9 @@ So one active user doing about 12 sessions a month would cost about **$0.35 per 
 - **Short memory:** chat sends only the last 6 messages; the coach the last 10.
 - **Short voice answers:** voice mode asks for 2–4 sentences, and spoken text is capped at 2,000 characters.
 - **A lean agent:** low reasoning effort, a 1,200-token reply cap, short tool results and at most 8 steps. This cut a task move to about 1.6 seconds and keeps it under Groq's free per-minute limit.
-- **Capped retries:** quizzes and flashcards get at most 3 tries.
+- **Capped retries:** quizzes and flashcards get at most 3 tries, and each retry tells the AI the exact Zod error.
+- **Small topic previews:** to plan real topics, the coach sees only the first 160 characters of 20 pieces spread over a PDF, not the whole PDF.
+- **Batched embeddings:** big PDFs are embedded 90 pieces at a time, so uploads stay inside Gemini's free per-minute quota.
 - **Rate limits:** 20 AI requests per minute per visitor.
 - **Swappable models:** model names live in `.env`, so moving to a cheaper or newer model needs no code change.
 
@@ -223,6 +225,10 @@ So one active user doing about 12 sessions a month would cost about **$0.35 per 
 - **One bad tool call crashed the whole coach.** Groq checks tool schemas on its own server, so a value over a limit (300 minutes when the max is 240) rejected the entire request. The AI now sees simple types only, and the real limits are checked inside each tool: a broken rule becomes a tool error the AI reads and fixes, and the UI shows it as ✕.
 - **The coach claimed an action that failed.** After a failed tool call it once replied "I added it". Now the prompt forbids claiming an action without a successful tool call, and the server adds "⚠️ Not saved: …" to the reply whenever a tool's last call failed, so the user always gets the truth.
 - **The agent hit Groq's free limit.** An agent resends everything after each tool. Lower reasoning, a reply cap and short tool results fixed it.
+- **A French scanned PDF gave "did not match schema".** Its pages were images, so the reader only got bullet symbols ("◇ ◇ ◇") and the AI had nothing to quote. Pages with almost no letters are now skipped, and an image-only PDF is refused at upload with a clear message. I also made the quiz errors precise: the AI SDK hides the real Zod issues inside `error.cause`, so the code now digs them out for the logs and the retry.
+- **A big PDF crashed the server.** pdf.js kept every page's fonts and images in memory: an 83-page PDF used about 760 MB on a 512 MB Render server, so it was killed and restarted in a loop. Pages are now read one at a time and the cache is emptied after each page (about 220 MB).
+- **Big uploads hit Gemini's free quota.** 201 chunks were sent at once against a limit of 100 per minute. They now go in batches of 90 with a pause, and a "too many requests" answer waits a minute and retries.
+- **The coach wrote vague tasks.** It only knew PDF titles, so it wrote "Read sections of X". A new tool, `get_document_topics`, shows it excerpts with page numbers, and the prompt requires real topics and pages in every reading task.
 
 ---
 
