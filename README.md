@@ -17,7 +17,7 @@ Two accounts, so you can check that each user only sees their own data.
 | User | Email | Password |
 | --- | --- | --- |
 | A | `vanjul@tests.com` | `test12345` |
-| B | _to be added_ | _to be added_ |
+| B | `john.doe@email.com` | `test12345` |
 
 ![DevTrail home page](docs/screenshots/01-home.jpg)
 
